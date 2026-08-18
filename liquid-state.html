@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GenLayer — Initializing</title>
+<style>
+  :root{
+    --bg:#050505;
+    --fg:#ffffff;
+    --dim:#5a5a5a;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    font-family:'JetBrains Mono','SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    overflow:hidden;
+  }
+  .stage{
+    width:min(60vw,230px);
+  }
+  svg{ display:block; width:100%; height:auto; overflow:visible; }
+
+  .outline{
+    fill:none;
+    stroke:rgba(255,255,255,.22);
+    stroke-width:4;
+  }
+
+  .wave-group{
+    animation:wave-drift 2.6s linear infinite;
+  }
+  .wave-fill{
+    fill:#ffffff;
+  }
+
+  .level{
+    transition:none;
+  }
+
+  @keyframes wave-drift{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-143px); }
+  }
+
+  .glow-final{
+    filter:drop-shadow(0 0 0 rgba(255,255,255,0));
+  }
+  .glow-final.done{
+    animation:glow-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes glow-pulse{
+    0%,100%{ filter:drop-shadow(0 0 4px rgba(255,255,255,.15)); }
+    50%{ filter:drop-shadow(0 0 16px rgba(255,255,255,.45)); }
+  }
+
+  .footer{
+    margin-top:1.7rem;
+    text-align:center;
+  }
+  .footer .status{
+    color:var(--fg);
+    font-size:.7rem;
+    letter-spacing:.26em;
+    text-transform:uppercase;
+  }
+  .footer .pct{
+    margin-top:.5rem;
+    color:var(--dim);
+    font-size:.62rem;
+    letter-spacing:.1em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .wave-group{ animation:none; }
+    .glow-final{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg viewBox="0 0 572 537" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="logoClip">
+        <path d="M313,1 L313,189 L409,390 L319,437 L570,536 Z
+                 M258,1 L1,536 L252,437 L162,389 L258,189 Z
+                 M284,256 L231,367 L283,394 L340,367 Z"/>
+      </clipPath>
+    </defs>
+
+    <!-- faint outline so the mark is visible before liquid catches up -->
+    <path class="outline"
+      d="M313,1 L313,189 L409,390 L319,437 L570,536 Z
+         M258,1 L1,536 L252,437 L162,389 L258,189 Z
+         M284,256 L231,367 L283,394 L340,367 Z"/>
+
+    <g id="glowGroup" class="glow-final">
+      <g clip-path="url(#logoClip)">
+        <g id="level" class="level" transform="translate(-143,560)">
+          <g class="wave-group">
+            <path class="wave-fill" d="M0.0,0.0 L17.9,4.95 L35.8,7.0 L53.6,4.95 L71.5,0.0 L89.4,-4.95 L107.2,-7.0 L125.1,-4.95 L143.0,-0.0 L160.9,4.95 L178.8,7.0 L196.6,4.95 L214.5,0.0 L232.4,-4.95 L250.2,-7.0 L268.1,-4.95 L286.0,-0.0 L303.9,4.95 L321.8,7.0 L339.6,4.95 L357.5,0.0 L375.4,-4.95 L393.2,-7.0 L411.1,-4.95 L429.0,-0.0 L446.9,4.95 L464.8,7.0 L482.6,4.95 L500.5,0.0 L518.4,-4.95 L536.2,-7.0 L554.1,-4.95 L572.0,-0.0 L589.9,4.95 L607.8,7.0 L625.6,4.95 L643.5,0.0 L661.4,-4.95 L679.2,-7.0 L697.1,-4.95 L715.0,-0.0 L732.9,4.95 L750.8,7.0 L768.6,4.95 L786.5,0.0 L804.4,-4.95 L822.2,-7.0 L840.1,-4.95 L858.0,-0.0 L858,700 L0,700 Z"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <div class="footer">
+    <div class="status" id="status">Filling state</div>
+    <div class="pct" id="pct">0%</div>
+  </div>
+</div>
+
+<script>
+  const level = document.getElementById('level');
+  const pctEl = document.getElementById('pct');
+  const statusEl = document.getElementById('status');
+  const glowGroup = document.getElementById('glowGroup');
+
+  const startY = 560;   // fully below shape (empty)
+  const endY = -20;     // fully above shape (full)
+  const duration = 3000;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let start = null;
+  function frame(ts){
+    if(!start) start = ts;
+    const t = Math.min(1, (ts - start) / duration);
+    const ease = t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    const y = startY + (endY - startY) * ease;
+    level.setAttribute('transform', 'translate(-143,' + y.toFixed(1) + ')');
+    pctEl.textContent = Math.round(ease * 100) + '%';
+
+    if(t < 1){
+      requestAnimationFrame(frame);
+    } else {
+      pctEl.textContent = '100%';
+      statusEl.textContent = 'State synced';
+      glowGroup.classList.add('done');
+    }
+  }
+
+  if(reduceMotion){
+    level.setAttribute('transform', 'translate(-143,' + endY + ')');
+    pctEl.textContent = '100%';
+    statusEl.textContent = 'State synced';
+    glowGroup.classList.add('done');
+  } else {
+    requestAnimationFrame(frame);
+  }
+</script>
+
+</body>
+</html>

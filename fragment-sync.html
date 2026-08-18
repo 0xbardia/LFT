@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GenLayer — Initializing</title>
+<style>
+  :root{
+    --bg:#050505;
+    --fg:#ffffff;
+    --dim:#5a5a5a;
+    --line:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono','SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* faint drifting grid */
+  .grid{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:42px 42px;
+    animation:drift 18s linear infinite;
+    mask-image:radial-gradient(circle at center, black 0%, transparent 72%);
+  }
+  @keyframes drift{
+    to{ background-position:42px 42px; }
+  }
+
+  .stage{
+    position:relative;
+    width:min(60vw,220px); height:min(60vw,220px);
+  }
+
+  .logo{
+    position:absolute; inset:0;
+    overflow:visible;
+  }
+
+  /* pieces converge from offset positions */
+  .piece{
+    opacity:0;
+    transform-box:fill-box;
+    transform-origin:center;
+    animation-fill-mode:forwards;
+    animation-timing-function:cubic-bezier(.2,.9,.25,1);
+  }
+  .piece--right{
+    transform:translate(60px,-46px) rotate(22deg) scale(.85);
+    animation:assemble-r 1.1s .15s forwards;
+  }
+  .piece--left{
+    transform:translate(-60px,-46px) rotate(-22deg) scale(.85);
+    animation:assemble-l 1.1s .15s forwards;
+  }
+  .piece--core{
+    transform:translateY(30px) scale(.3);
+    animation:assemble-core .6s .95s forwards;
+  }
+
+  @keyframes assemble-r{
+    0%{ opacity:0; transform:translate(60px,-46px) rotate(22deg) scale(.85); }
+    70%{ opacity:1; }
+    100%{ opacity:1; transform:translate(0,0) rotate(0) scale(1); }
+  }
+  @keyframes assemble-l{
+    0%{ opacity:0; transform:translate(-60px,-46px) rotate(-22deg) scale(.85); }
+    70%{ opacity:1; }
+    100%{ opacity:1; transform:translate(0,0) rotate(0) scale(1); }
+  }
+  @keyframes assemble-core{
+    0%{ opacity:0; transform:translateY(30px) scale(.3); }
+    60%{ opacity:1; transform:translateY(-4px) scale(1.18); }
+    100%{ opacity:1; transform:translateY(0) scale(1); }
+  }
+
+  /* idle pulse once assembled */
+  .logo{
+    animation:hold-glow 2.4s ease-in-out 2.1s infinite;
+  }
+  @keyframes hold-glow{
+    0%,100%{ filter:drop-shadow(0 0 4px rgba(255,255,255,.1)); }
+    50%{ filter:drop-shadow(0 0 14px rgba(255,255,255,.35)); }
+  }
+
+  /* scan line sweeping through the mark while it assembles */
+  .scan{
+    position:absolute; left:-10%; width:120%; height:2px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+    top:0;
+    animation:sweep 1.3s ease-in-out 1;
+    opacity:.8;
+  }
+  @keyframes sweep{
+    0%{ top:0%; opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ top:100%; opacity:0; }
+  }
+
+  .footer{
+    position:absolute;
+    bottom:-4rem; left:50%; transform:translateX(-50%);
+    width:14rem;
+    text-align:center;
+  }
+  .footer .status{
+    color:var(--fg);
+    font-size:.7rem;
+    letter-spacing:.26em;
+    text-transform:uppercase;
+    margin-bottom:.65rem;
+  }
+  .bar{
+    width:100%; height:2px;
+    background:rgba(255,255,255,.12);
+    position:relative;
+    overflow:hidden;
+  }
+  .bar span{
+    position:absolute; inset:0 100% 0 0;
+    background:var(--fg);
+    animation:fill 2.4s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  @keyframes fill{
+    0%{ right:100%; }
+    100%{ right:0%; }
+  }
+  .pct{
+    margin-top:.55rem;
+    color:var(--dim);
+    font-size:.62rem;
+    letter-spacing:.1em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .grid{ animation:none; }
+    .piece--right, .piece--left, .piece--core{ animation:none; opacity:1; transform:none; }
+    .logo{ animation:none; }
+    .scan{ display:none; }
+    .bar span{ animation:none; right:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid"></div>
+
+<div class="stage">
+  <svg class="logo" viewBox="0 0 572 537" xmlns="http://www.w3.org/2000/svg">
+    <path class="piece piece--right" fill="#fff"
+      d="M313,1 L313,189 L409,390 L319,437 L570,536 Z"/>
+    <path class="piece piece--left" fill="#fff"
+      d="M258,1 L1,536 L252,437 L162,389 L258,189 Z"/>
+    <path class="piece piece--core" fill="#fff"
+      d="M284,256 L231,367 L283,394 L340,367 Z"/>
+  </svg>
+  <div class="scan"></div>
+
+  <div class="footer">
+    <div class="status" id="status">Assembling node</div>
+    <div class="bar"><span></span></div>
+    <div class="pct" id="pct">0%</div>
+  </div>
+</div>
+
+<script>
+  const pctEl = document.getElementById('pct');
+  const statusEl = document.getElementById('status');
+  const messages = ['Assembling node','Syncing state','Ready'];
+  let start = null;
+  const duration = 2400;
+  function tick(ts){
+    if(!start) start = ts;
+    const p = Math.min(1, (ts - start) / duration);
+    pctEl.textContent = Math.round(p * 100) + '%';
+    if(p < .97) requestAnimationFrame(tick);
+    else pctEl.textContent = '100%';
+  }
+  requestAnimationFrame(tick);
+
+  setTimeout(()=> statusEl.textContent = messages[1], 900);
+  setTimeout(()=> statusEl.textContent = messages[2], 2300);
+</script>
+
+</body>
+</html>

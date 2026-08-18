@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GenLayer — Initializing</title>
+<style>
+  :root{
+    --bg:#050505;
+    --fg:#ffffff;
+    --dim:#6b6b6b;
+    --ring:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono','SF Mono',ui-monospace,Menlo,Consolas,monospace;
+    overflow:hidden;
+  }
+  .stage{
+    position:relative;
+    width:min(70vw,260px); height:min(70vw,260px);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* rotating scan ring */
+  .ring{
+    position:absolute; inset:0;
+    animation:spin 2.6s linear infinite;
+  }
+  .ring circle{
+    fill:none;
+    stroke:var(--ring);
+    stroke-width:1.4;
+    stroke-linecap:round;
+    stroke-dasharray:14 10;
+    opacity:.55;
+  }
+  .ring.ring--slow{
+    animation:spin-rev 4.2s linear infinite;
+  }
+  .ring.ring--slow circle{
+    stroke-dasharray:2 8;
+    opacity:.3;
+  }
+
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  @keyframes spin-rev{ to{ transform:rotate(-360deg);} }
+
+  /* logo */
+  .logo{
+    position:relative;
+    width:42%; height:42%;
+    filter:drop-shadow(0 0 0 rgba(255,255,255,0));
+    animation:glow 2.2s ease-in-out infinite;
+  }
+  .logo path{
+    fill:none;
+    stroke:var(--fg);
+    stroke-width:6;
+    stroke-linejoin:round;
+    stroke-linecap:round;
+    stroke-dasharray:900;
+    stroke-dashoffset:900;
+    animation:draw 1.8s cubic-bezier(.65,0,.35,1) forwards,
+              fillin .4s ease-out .8s forwards;
+  }
+
+  @keyframes draw{
+    to{ stroke-dashoffset:0; }
+  }
+  @keyframes fillin{
+    to{ fill:var(--fg); }
+  }
+  @keyframes glow{
+    0%,100%{ filter:drop-shadow(0 0 6px rgba(255,255,255,.15)); }
+    50%{ filter:drop-shadow(0 0 16px rgba(255,255,255,.4)); }
+  }
+
+  .label{
+    position:absolute;
+    bottom:-3.2rem;
+    left:50%; transform:translateX(-50%);
+    text-align:center;
+    white-space:nowrap;
+  }
+  .label .status{
+    color:var(--fg);
+    font-size:.72rem;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+  }
+  .label .status::after{
+    content:'';
+    animation:dots 1.4s steps(4,end) infinite;
+  }
+  @keyframes dots{
+    0%{content:'';}
+    25%{content:'.';}
+    50%{content:'..';}
+    75%{content:'...';}
+    100%{content:'';}
+  }
+  .label .sub{
+    margin-top:.4rem;
+    color:var(--dim);
+    font-size:.6rem;
+    letter-spacing:.14em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ring, .ring.ring--slow{ animation:none; }
+    .logo path{ animation:none; stroke-dashoffset:0; fill:var(--fg); }
+    .logo{ animation:none; }
+    .label .status::after{ animation:none; content:'...'; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg class="ring" viewBox="0 0 260 260">
+    <circle cx="130" cy="130" r="118"/>
+  </svg>
+  <svg class="ring ring--slow" viewBox="0 0 260 260">
+    <circle cx="130" cy="130" r="100"/>
+  </svg>
+
+  <svg class="logo" viewBox="0 0 572 537" xmlns="http://www.w3.org/2000/svg">
+    <path d="M313,1 L313,189 L409,390 L319,437 L570,536 Z
+             M258,1 L1,536 L252,437 L162,389 L258,189 Z
+             M284,256 L231,367 L283,394 L340,367 Z"/>
+  </svg>
+
+  <div class="label">
+    <div class="status">Initializing GenLayer</div>
+    <div class="sub">compiling intelligent contract</div>
+  </div>
+</div>
+
+</body>
+</html>
